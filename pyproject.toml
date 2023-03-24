@@ -1,0 +1,12 @@
+[project]
+name = 'autofishing'
+version = '0.1.0'
+description = 'Automates fishing in Stardrew Valley.'
+
+
+[tool.setuptools.packages.find]
+where = ["src"]  # list of folders that contain the packages (["."] by default)
+include = ["autofishing*"]  # package names should match these glob patterns (["*"] by default)
+
+[pytest]
+testpaths = 'tests'
