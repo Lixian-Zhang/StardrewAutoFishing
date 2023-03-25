@@ -11,3 +11,7 @@ def detect_game_window() -> int:
 
 def _window_enum_handler(hwnd, results: list) -> None:
     results.append(hwnd)
+
+
+def get_fishing_level():
+    return 5

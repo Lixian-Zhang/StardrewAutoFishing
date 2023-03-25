@@ -4,21 +4,28 @@ import cv2
 import numpy
 import time
 import numpy as np
+from time import sleep
 
-from utils import detect_game_window
+from utils import detect_game_window, get_fishing_level
+
+TEMPLATE_MATCHING_CONFIDENCE_THRESHOLD = 0.5
+
+# 用最小缩放等级 !!!
 
 class Eye:
 
     def __init__(self) -> None:
         self.game_window = detect_game_window()
         self.game_area = win32gui.GetWindowRect(self.game_window)
+        self.fish_pattern = np.load('C:\\Users\\Max-win10\\Desktop\\fish.npy')
+        self.fishing_UI_pattern = np.load('C:\\Users\\Max-win10\\Desktop\\fishing_UI.npy')
 
     @property
     def game_area(self):
         return win32gui.GetWindowRect(self.game_window)
     
     @game_area.setter
-    def game_area(self, value):
+    def game_area(self, _):
         return
 
     def look(self):
@@ -26,39 +33,118 @@ class Eye:
             img = sct.grab(self._get_mss_monitor())
         return np.array(img)
     
-
     def run(self):
         with mss.mss() as sct:
+            UI_loc = None
+
             while "Screen capturing":
                 last_time = time.time()
+                monitor = self._get_mss_monitor()
+                img = numpy.array(sct.grab(monitor))
 
-                # Get raw pixels from the screen, save it to a Numpy array
-                img = numpy.array(sct.grab(self._get_mss_monitor()))
+                if img.shape[0] != monitor['height'] or img.shape[1] != monitor['width']:
+                    raise RuntimeError('Failed to capture game.')
+                
+                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-                # Display the picture
+                if UI_loc is not None and not self.validate_fishing_UI(UI_loc, img):
+                    UI_loc = None
+
+                noisy_loc = self.detect_fishing_UI(gray)
+                if noisy_loc is not None and self.validate_fishing_UI(noisy_loc, img):
+                    UI_loc = noisy_loc
+
+                if UI_loc is not None:
+                    cv2.rectangle(img, UI_loc, UI_loc + np.flip(self.fishing_UI_pattern.shape), (0, 0, 255), 3)
+                    gray = gray[UI_loc[1] : UI_loc[1] + self.fishing_UI_pattern.shape[0], 
+                                UI_loc[0] : UI_loc[0] + self.fishing_UI_pattern.shape[1]]
+
+                    fish_loc = self.detect_fish(gray)
+
+                    if fish_loc is not None:
+                        cv2.rectangle(img, UI_loc + fish_loc, UI_loc + fish_loc + np.flip(self.fish_pattern.shape), (0, 255, 0), 3)
+
+                    masked_img = img[UI_loc[1] : UI_loc[1] + self.fishing_UI_pattern.shape[0], 
+                                            UI_loc[0] : UI_loc[0] + self.fishing_UI_pattern.shape[1]]
+                    top, bottom = self.detect_fishing_bar(masked_img, fish_loc)
+                    cv2.rectangle(img, UI_loc + np.array([66, top + 22]), UI_loc + np.array([86, bottom + 22]), (255, 0, 0), 1)
+                    # progress = self.detect_progress(masked_img)
+
                 cv2.imshow("OpenCV/Numpy normal", img)
-
-                # Display the picture in grayscale
-                # cv2.imshow('OpenCV/Numpy grayscale',
-                #            cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY))
-
-                print(f"fps: {1 / (time.time() - last_time)}")
-
+                # print(f"fps: {1 / (time.time() - last_time)}")
                 # Press "q" to quit
                 if cv2.waitKey(25) & 0xFF == ord("q"):
                     cv2.destroyAllWindows()
                     break
 
     def _get_mss_monitor(self):
+        area = self.game_area
         monitor = {
-                    "left": self.game_area[0], 
-                    "top": self.game_area[1], 
-                    "width": self.game_area[2] - self.game_area[0],
-                    "height": self.game_area[3] - self.game_area[1]
+                    "left": area[0], 
+                    "top": area[1], 
+                    "width": area[2] - area[0],
+                    "height": area[3] - area[1]
                 }
         return monitor
+    
+    def detect_fish(self, gray):
+        confidence, loc = match_template(gray, self.fish_pattern)
+        if confidence > TEMPLATE_MATCHING_CONFIDENCE_THRESHOLD:
+            return loc
+        else:
+            return None
+        
+    def detect_fishing_UI(self, gray):
+        confidence, loc = match_template(gray, self.fishing_UI_pattern)
+        if confidence > TEMPLATE_MATCHING_CONFIDENCE_THRESHOLD:
+            return loc
+        else:
+            return None
+        
+    def detect_progress(self, masked_img):
+        line = masked_img[18:451, 114, 0]
+        return 1 - np.count_nonzero(line) / len(line)
+    
+    def validate_fishing_UI(self, UI_loc, img):
+        masked_img = img[UI_loc[1] : UI_loc[1] + self.fishing_UI_pattern.shape[0], 
+                                            UI_loc[0] : UI_loc[0] + self.fishing_UI_pattern.shape[1]]
+        return self.detect_progress(masked_img) != 0
+    
+    def detect_fishing_bar(self, masked_img, fish_loc) -> tuple[int, int]:
+        # returns an index in fishing UI frame
+        i = masked_img[22 : 445, 66 : 87, 0]
+        t = i < 200
 
-img = Eye().look()
-cv2.imshow('test', img)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+        t = np.all(t, axis=-1)
+
+        j = masked_img[438 : 445, 66 : 87, 1]
+        t[-j.shape[0]:] = np.all(j > 120, axis=-1)
+
+        top = np.argwhere(t)
+        bottom = np.argwhere(np.flip(t))
+
+        print(t)
+
+        if len(top) == 0 or len(bottom) == 0:
+            return 0, 0
+        
+        top = top[0].item()
+        bottom = len(t) - bottom[0].item()
+
+        fish_y = fish_loc[1]
+        if abs(fish_y - bottom) < abs(fish_y - top):
+            bottom = top + get_fishing_level() * 6 + 72
+        else:
+            top = bottom - (get_fishing_level() * 6 + 72)
+
+        return top, bottom
+
+def match_template(img, template) -> tuple[int, int]:
+    mask = np.where(template == 255, 0, 1)
+    mask = mask.astype(np.uint8)
+    res = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED, mask=mask)
+    _, max_val, _, max_loc = cv2.minMaxLoc(res)
+    return max_val, np.array(max_loc)# np.array(max_loc, dtype=np.int32) + np.flip(np.array(template.shape, dtype=np.int32) // 2)
+
+e = Eye().run()
+
