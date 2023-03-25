@@ -4,7 +4,6 @@ import cv2
 import numpy
 import time
 import numpy as np
-from time import sleep
 
 from utils import detect_game_window, get_fishing_level
 
@@ -16,6 +15,8 @@ class Eye:
 
     def __init__(self) -> None:
         self.game_window = detect_game_window()
+        if self.game_window is None:
+            raise RuntimeError('Game window not found, please check that the game is running.')
         self.game_area = win32gui.GetWindowRect(self.game_window)
         self.fish_pattern = np.load('C:\\Users\\Max-win10\\source\\repos\\autoFishing\\res\\fish.npy')
         self.fishing_UI_pattern = np.load('C:\\Users\\Max-win10\\source\\repos\\autoFishing\\res\\fishing_UI.npy')
@@ -92,6 +93,8 @@ class Eye:
             gray = gray[UI_loc[1] : UI_loc[1] + self.fishing_UI_pattern.shape[0], 
                         UI_loc[0] : UI_loc[0] + self.fishing_UI_pattern.shape[1]]
             fish_loc = self.detect_fish(gray)
+            if fish_loc is None:
+                return None
             masked_img = img[UI_loc[1] : UI_loc[1] + self.fishing_UI_pattern.shape[0], 
                                     UI_loc[0] : UI_loc[0] + self.fishing_UI_pattern.shape[1]]
             top, bottom = self.detect_fishing_bar(masked_img, fish_loc)
@@ -108,7 +111,7 @@ class Eye:
                     "height": area[3] - area[1]
                 }
         return monitor
-    
+
     def detect_fish(self, gray):
         confidence, loc = match_template(gray, self.fish_pattern)
         if confidence > TEMPLATE_MATCHING_CONFIDENCE_THRESHOLD:
@@ -117,6 +120,8 @@ class Eye:
             return None
         
     def detect_fishing_UI(self, gray):
+        if np.any(gray.shape < self.fishing_UI_pattern.shape):
+            return None
         confidence, loc = match_template(gray, self.fishing_UI_pattern)
         if confidence > TEMPLATE_MATCHING_CONFIDENCE_THRESHOLD:
             return loc
@@ -136,13 +141,10 @@ class Eye:
     
     def detect_fishing_bar(self, masked_img, fish_loc) -> tuple[int, int]:
         # returns an index in fishing UI frame
-        i = masked_img[22 : 445, 66 : 87, 0]
-        t = i < 200
+        t = np.all(masked_img[22 : 445, 66 : 87, 0] < 200, axis=-1)
 
-        t = np.all(t, axis=-1)
-
-        j = masked_img[438 : 445, 66 : 87, 1]
-        t[-j.shape[0]:] = np.all(j > 120, axis=-1)
+        bottom_part = masked_img[438 : 445, 66 : 87, 1]
+        t[-bottom_part.shape[0]:] = np.all(bottom_part > 120, axis=-1)
 
         top = np.argwhere(t)
         bottom = np.argwhere(np.flip(t))
@@ -162,8 +164,7 @@ class Eye:
         return top, bottom
 
 def match_template(img, template) -> tuple[int, int]:
-    mask = np.where(template == 255, 0, 1)
-    mask = mask.astype(np.uint8)
+    mask = np.where(template == 255, 0, 1).astype(np.uint8)
     res = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED, mask=mask)
     _, max_val, _, max_loc = cv2.minMaxLoc(res)
     return max_val, np.array(max_loc)# np.array(max_loc, dtype=np.int32) + np.flip(np.array(template.shape, dtype=np.int32) // 2)
