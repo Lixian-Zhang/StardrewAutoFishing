@@ -17,48 +17,25 @@ TCHAR buffer[BUFFER_SIZE];
 enum operation_state { clicking, idle };
 
 HANDLE establish_pipe();
+void connect_to_pipe(HANDLE pipe_handle);
+bool read_from_pipe(HANDLE pipe_handle);
 void release_pipe(HANDLE pipe_handle);
 
+
 int main() {
-    bool is_running = false;
-    HANDLE pipe = establish_pipe();
-    printf("Pipe established, handle id: %llu.\n", (uint64_t)pipe);
-    DWORD num_bytes_read;
-    bool connected = ConnectNamedPipe(pipe, NULL) ? true : (GetLastError() == ERROR_PIPE_CONNECTED); 
-    
-    while (!connected) {
-        printf("No connection request, retrying...\n");
-    }
+    HANDLE pipe_handle = establish_pipe();
 
-    printf("Client connected, listening...\n");
+    connect_to_pipe(pipe_handle);    
     while (true) {
-        bool success = ReadFile(
-            pipe,
-            buffer,
-            sizeof(buffer),
-            &num_bytes_read,
-            NULL
-        );
-        if (!success || num_bytes_read == 0) {
-            if (GetLastError() == ERROR_BROKEN_PIPE) {
-                printf(TEXT("Client disconnected.\n")); 
-            }
-            else {
-                printf(TEXT("ReadFile failed, error code: %lu.\n"), GetLastError()); 
-            }
-          break;
-        }
-        printf("Received: %s\n", buffer);
+        if (!read_from_pipe(pipe_handle)) break;
     }
 
-    release_pipe(pipe);
+    release_pipe(pipe_handle);
     return 0;
 }
 
-
 HANDLE establish_pipe() {
-
-    HANDLE pipe = CreateNamedPipeA(
+    HANDLE pipe_handle = CreateNamedPipeA(
         pipe_name,
         PIPE_ACCESS_DUPLEX,
         PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
@@ -68,13 +45,45 @@ HANDLE establish_pipe() {
         0,
         NULL
     );
-    if (pipe == INVALID_HANDLE_VALUE) {
+    if (pipe_handle == INVALID_HANDLE_VALUE) {
         printf("Can not create pipe.\n");
         exit(0);
     }
-    return pipe;
+    printf("Pipe established, handle id: %llu.\n", (uint64_t)pipe_handle);
+    return pipe_handle;
+}
+
+void connect_to_pipe(HANDLE pipe_handle) {
+    bool connected = false;
+    do {
+        printf("Waiting for connection...\n");
+        connected = ConnectNamedPipe(pipe_handle, NULL) ? true : (GetLastError() == ERROR_PIPE_CONNECTED); 
+    } while (!connected);
+    printf("Client connected, listening...\n");
 }
 
 void release_pipe(HANDLE pipe_handle) {
     CloseHandle(pipe_handle);
+}
+
+bool read_from_pipe(HANDLE pipe_handle) {
+    DWORD num_bytes_read;
+    bool success = ReadFile(
+        pipe_handle,
+        buffer,
+        sizeof(buffer),
+        &num_bytes_read,
+        NULL
+    );
+    if (!success || num_bytes_read == 0) {
+        if (GetLastError() == ERROR_BROKEN_PIPE) {
+            printf(TEXT("Client disconnected.\n")); 
+        }
+        else {
+            printf(TEXT("ReadFile failed, error code: %lu.\n"), GetLastError()); 
+        }
+        return false;
+    }
+    printf("Received: %s\n", buffer);
+    return true;
 }
