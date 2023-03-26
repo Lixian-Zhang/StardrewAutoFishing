@@ -5,7 +5,8 @@ import numpy
 import time
 import numpy as np
 
-from .utils import detect_game_window, get_fishing_level
+from .utils import detect_game_window, get_fishing_level, get_repo_res_path
+from .common import fish_pattern_name, fishing_UI_pattern_name
 
 TEMPLATE_MATCHING_CONFIDENCE_THRESHOLD = 0.5
 
@@ -18,8 +19,8 @@ class Eye:
         if self.game_window is None:
             raise RuntimeError('Game window not found, please check that the game is running.')
         self.game_area = win32gui.GetWindowRect(self.game_window)
-        self.fish_pattern = np.load('C:\\Users\\Max-win10\\source\\repos\\autoFishing\\res\\fish.npy')
-        self.fishing_UI_pattern = np.load('C:\\Users\\Max-win10\\source\\repos\\autoFishing\\res\\fishing_UI.npy')
+        self.fish_pattern = np.load(str(get_repo_res_path() / fish_pattern_name))
+        self.fishing_UI_pattern = np.load(str(get_repo_res_path() / fishing_UI_pattern_name))
 
     @property
     def game_area(self):
@@ -71,7 +72,7 @@ class Eye:
                     cv2.rectangle(img, UI_loc + np.array([66, top + 22]), UI_loc + np.array([86, bottom + 22]), (255, 0, 0), 1)
                     # progress = self.detect_progress(masked_img)
 
-                cv2.imshow("OpenCV/Numpy normal", img)
+                cv2.imshow("Game Screen Capture", img)
                 # print(f"fps: {1 / (time.time() - last_time)}")
                 # Press "q" to quit
                 if cv2.waitKey(25) & 0xFF == ord("q"):

@@ -3,6 +3,8 @@ import win32api
 import subprocess
 import sys
 from time import sleep
+from .utils import get_repo_bin_path
+from .common import hand_bin_name, pipe_name
 
 class Hand:
 
@@ -16,8 +18,9 @@ class Hand:
         self._kill_server()
 
     def _start_server(self):
+        print(str(get_repo_bin_path() / hand_bin_name))
         self.server_process = subprocess.Popen(
-            ['C:\\Users\\Max-win10\\source\\repos\\autoFishing\\bin\\hand.exe'], 
+            [str(get_repo_bin_path() / hand_bin_name)], 
             stdout=sys.stdout
         )
 
@@ -26,7 +29,7 @@ class Hand:
 
     def _connect_to_pipe(self):
         self.pipe_handle = win32file.CreateFile(
-            "\\\\.\\pipe\\stardrew_auto_fishing_pipe",
+            pipe_name,
             win32file.GENERIC_WRITE,
             win32file.FILE_SHARE_READ,
             None,
