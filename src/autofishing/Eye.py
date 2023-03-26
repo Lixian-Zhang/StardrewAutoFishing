@@ -5,7 +5,7 @@ import numpy
 import time
 import numpy as np
 
-from utils import detect_game_window, get_fishing_level
+from .utils import detect_game_window, get_fishing_level
 
 TEMPLATE_MATCHING_CONFIDENCE_THRESHOLD = 0.5
 

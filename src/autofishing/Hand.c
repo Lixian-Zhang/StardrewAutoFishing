@@ -7,13 +7,12 @@
 #include <string.h>
 
 #define PIPE_NAME "\\\\.\\pipe\\stardrew_auto_fishing_pipe"
-
+#define BUFFER_SIZE 1024
 
 LPCTSTR pipe_name = TEXT(PIPE_NAME); 
 
-const unsigned int buffer_size = 1024;
 const unsigned int respond_interval_ms = 200;
-TCHAR buffer[buffer_size];
+TCHAR buffer[BUFFER_SIZE];
 
 enum operation_state { clicking, idle };
 
@@ -64,8 +63,8 @@ HANDLE establish_pipe() {
         PIPE_ACCESS_DUPLEX,
         PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
         PIPE_UNLIMITED_INSTANCES ,
-        buffer_size,
-        buffer_size,
+        BUFFER_SIZE,
+        BUFFER_SIZE,
         0,
         NULL
     );
