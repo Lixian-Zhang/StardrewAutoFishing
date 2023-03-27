@@ -8,7 +8,17 @@ class Agent:
 
     def __init__(self) -> None:
         self.hand = Hand()
-        self.Eye = Eye()
+        self.eye = Eye()
 
     def __del__(self):
         pass
+
+    def run(self):
+        while True:
+            game_info = self.eye.get_game_info()
+            print(game_info)
+            if game_info is None:
+                self.hand.stop()
+                continue
+            fish_y, fishing_bar_y, progress = game_info
+            self.hand.click(0.55 + (fish_y - fishing_bar_y) / -500 * 1)

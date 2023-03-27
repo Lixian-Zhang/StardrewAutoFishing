@@ -19,6 +19,13 @@ class Hand:
         self._disconnect_to_pipe()
         self._kill_server()
 
+
+    def click(self, duty_ratio: float):
+        self._send_message(f'clicking {duty_ratio:.2f}')
+    
+    def stop(self):
+        self._send_message('idle')
+
     def _start_server(self):
         print(str(get_repo_bin_path() / hand_bin_name))
         self.server_process = subprocess.Popen(

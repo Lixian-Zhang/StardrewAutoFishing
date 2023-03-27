@@ -101,7 +101,7 @@ class Eye:
             top, bottom = self.detect_fishing_bar(masked_img, fish_loc)
             progress = self.detect_progress(masked_img)
         
-        return fish_loc[1], top + (bottom - top) // 2, progress
+        return fish_loc[1] + 20 , top + (bottom - top) // 2, progress
 
     def _get_mss_monitor(self):
         area = self.game_area
