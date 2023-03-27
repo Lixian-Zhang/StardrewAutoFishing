@@ -12,8 +12,10 @@ class Hand:
         self._start_server()
         sleep(0.1)
         self._connect_to_pipe()
+        sleep(0.1)
 
     def __del__(self):
+        sleep(0.1)
         self._disconnect_to_pipe()
         self._kill_server()
 
