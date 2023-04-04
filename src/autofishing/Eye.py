@@ -21,6 +21,7 @@ class Eye:
         self.game_area = win32gui.GetWindowRect(self.game_window)
         self.fish_pattern = np.load(str(get_repo_res_path() / fish_pattern_name))
         self.fishing_UI_pattern = np.load(str(get_repo_res_path() / fishing_UI_pattern_name))
+        self.last_UI_loc = None
 
     @property
     def game_area(self):
@@ -49,11 +50,11 @@ class Eye:
                 
                 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-                if UI_loc is not None and not self.validate_fishing_UI(UI_loc, img):
+                if UI_loc is not None and not self.is_fishing_UI_valid(UI_loc, img):
                     UI_loc = None
 
                 noisy_loc = self.detect_fishing_UI(gray)
-                if noisy_loc is not None and self.validate_fishing_UI(noisy_loc, img):
+                if noisy_loc is not None and self.is_fishing_UI_valid(noisy_loc, img):
                     UI_loc = noisy_loc
 
                 if UI_loc is not None:
@@ -85,11 +86,16 @@ class Eye:
             img = numpy.array(sct.grab(monitor))
             if img.shape[0] != monitor['height'] or img.shape[1] != monitor['width']:
                 raise RuntimeError('Failed to capture game.')
-            
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            UI_loc = self.detect_fishing_UI(gray)
-            if not self.validate_fishing_UI(UI_loc, img):
-                return None
+
+            if self.is_fishing_UI_valid(self.last_UI_loc, img):
+                UI_loc = self.last_UI_loc
+            else:
+                UI_loc = self.detect_fishing_UI(gray)
+                if not self.is_fishing_UI_valid(UI_loc, img):
+                    self.last_UI_loc = None
+                    return None
+                self.last_UI_loc = UI_loc
 
             gray = gray[UI_loc[1] : UI_loc[1] + self.fishing_UI_pattern.shape[0], 
                         UI_loc[0] : UI_loc[0] + self.fishing_UI_pattern.shape[1]]
@@ -133,7 +139,7 @@ class Eye:
         line = masked_img[18:451, 114, 0]
         return 1 - np.count_nonzero(line) / len(line)
     
-    def validate_fishing_UI(self, UI_loc, img):
+    def is_fishing_UI_valid(self, UI_loc, img):
         if UI_loc is None:
             return False
         masked_img = img[UI_loc[1] : UI_loc[1] + self.fishing_UI_pattern.shape[0], 
@@ -170,11 +176,3 @@ def match_template(img, template) -> tuple[int, int]:
     _, max_val, _, max_loc = cv2.minMaxLoc(res)
     return max_val, np.array(max_loc)# np.array(max_loc, dtype=np.int32) + np.flip(np.array(template.shape, dtype=np.int32) // 2)
 
-def main():
-    # e = Eye().run()
-    while True:
-        last_time = time.time()
-        print(Eye().get_game_info(), f"fps: {1 / (time.time() - last_time)}", end='\r')
-
-if __name__ == '__main__':
-    main()
