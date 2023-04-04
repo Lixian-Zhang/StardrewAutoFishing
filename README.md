@@ -12,8 +12,8 @@ Next step is to fix the treasure bug.
 
 # Usage
 Prerequisites:
-1.Python >= 3.6 (only tested on 3.10.7 should work for all versions after 3.6)
-2.Windows10
+1. Python >= 3.6 (only tested on 3.10.7 should work for all versions after 3.6)
+2. Windows10
 
 Steps:
 1. Download 'autoFishing.zip' at 'https://github.com/Lixian-Zhang/StardrewAutoFishing/releases/tag/v0.1.0'
