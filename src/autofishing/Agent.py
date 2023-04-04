@@ -1,6 +1,3 @@
-import win32file
-import win32api
-from time import sleep
 from .Hand import Hand
 from .Eye import Eye
 from .utils import get_fishing_bar_length

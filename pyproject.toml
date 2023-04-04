@@ -2,7 +2,12 @@
 name = 'autofishing'
 version = '0.1.0'
 description = 'Automates fishing in Stardrew Valley.'
-
+dependencies = [
+  'opencv-python ~= 4.7.0',
+  'numpy ~= 1.23.5',
+  'mss ~= 7.0.1',
+  'pywin32',
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]  # list of folders that contain the packages (["."] by default)

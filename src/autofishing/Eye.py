@@ -2,7 +2,6 @@ import mss
 import win32gui
 import cv2
 import numpy
-import time
 import numpy as np
 
 from .utils import detect_game_window, get_fishing_bar_length, get_repo_res_path
