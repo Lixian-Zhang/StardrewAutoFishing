@@ -20,4 +20,4 @@ class Agent:
                 self.hand.stop()
                 continue
             fish_y, fishing_bar_y, progress = game_info
-            self.hand.click(0.55 + (fish_y - fishing_bar_y) / -500 * 1)
+            self.hand.click(0.50 + (fish_y - fishing_bar_y) / -300 * 1)

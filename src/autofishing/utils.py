@@ -13,7 +13,7 @@ def _window_enum_handler(hwnd, results: list) -> None:
     results.append(hwnd)
 
 def get_fishing_level():
-    return 5
+    return 10
 
 def get_repo_root_path():
     return Path(__file__).parent.parent.parent
