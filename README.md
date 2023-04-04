@@ -28,3 +28,19 @@ What this command does is to install a python package from the current directory
 8. **Change both two zoom levels to the minimum (75%) and change the display mode to windowed then resize the game window to the minimum**.
 9. Run: `python tests\test_Agent.py` you should see 'Game window detected.' being printed out.
 10. Catch some fish!
+
+# 使用说明
+系统要求：
+1. Python版本>=3.6
+2. Windows10
+操作步骤：
+1. 在‘https://github.com/Lixian-Zhang/StardrewAutoFishing/releases/tag/v0.1.0’下载文件‘autoFishing.zip’。
+2. 解压缩到你喜欢的地方。
+3. 打开一个终端（cmd或者powershell）
+4. 用`cd <你的目录>`命令切换到你解压文件的目录，例如`cd C:\Users\some_user_name\Desktop\autoFishing`。
+5. 用`dir`命令验证第4步正确执行。你会看到刚刚解压出来的文件名被打印出来。
+6. 运行`pip install -e .`命令（小心不要漏掉末尾的点）。这一步的作用是把当前目录当作一个python包安装到你电脑里。运行`pip uninstall autoFishing`命令可以把它卸载掉。
+7. 运行游戏。
+8. **把两种缩放级别都调到最小，并且切换到窗口化模式。**
+9. 运行`python tests\test_Agent.py`命令，成功的话会看到'Game window detected.'被打印出来。
+10. 开始捕鱼！
