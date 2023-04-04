@@ -18,8 +18,8 @@
 
 LPCTSTR pipe_name = TEXT(PIPE_NAME); 
 
-const unsigned int respond_interval_ms = 100;
-const unsigned int respond_interval_clock = 100; 
+const unsigned int respond_interval_ms = 20;
+const unsigned int respond_interval_clock = 20; 
 TCHAR buffer[BUFFER_SIZE];
 
 typedef enum tag_operation_state { clicking, idle } operation_state;
