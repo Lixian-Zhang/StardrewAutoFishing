@@ -16,7 +16,6 @@ class Agent:
     def run(self):
         while True:
             game_info = self.eye.get_game_info()
-            print(game_info)
             if game_info is None:
                 self.hand.stop()
                 continue

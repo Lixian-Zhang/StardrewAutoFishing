@@ -10,7 +10,7 @@ from .common import fish_pattern_name, fishing_UI_pattern_name
 
 TEMPLATE_MATCHING_CONFIDENCE_THRESHOLD = 0.5
 
-# 用最小缩放等级 !!!
+# use minimal zoom level (both UI and game)
 
 class Eye:
 
