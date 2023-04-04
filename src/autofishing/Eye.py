@@ -5,7 +5,7 @@ import numpy
 import time
 import numpy as np
 
-from .utils import detect_game_window, get_fishing_level, get_repo_res_path
+from .utils import detect_game_window, get_fishing_bar_length, get_repo_res_path
 from .common import fish_pattern_name, fishing_UI_pattern_name
 
 TEMPLATE_MATCHING_CONFIDENCE_THRESHOLD = 0.5
@@ -35,50 +35,6 @@ class Eye:
         with mss.mss() as sct:
             img = sct.grab(self._get_mss_monitor())
         return np.array(img)
-
-    def run(self):
-        with mss.mss() as sct:
-            UI_loc = None
-
-            while "Screen capturing":
-                last_time = time.time()
-                monitor = self._get_mss_monitor()
-                img = numpy.array(sct.grab(monitor))
-
-                if img.shape[0] != monitor['height'] or img.shape[1] != monitor['width']:
-                    raise RuntimeError('Failed to capture game.')
-                
-                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-                if UI_loc is not None and not self.is_fishing_UI_valid(UI_loc, img):
-                    UI_loc = None
-
-                noisy_loc = self.detect_fishing_UI(gray)
-                if noisy_loc is not None and self.is_fishing_UI_valid(noisy_loc, img):
-                    UI_loc = noisy_loc
-
-                if UI_loc is not None:
-                    cv2.rectangle(img, UI_loc, UI_loc + np.flip(self.fishing_UI_pattern.shape), (0, 0, 255), 3)
-                    gray = gray[UI_loc[1] : UI_loc[1] + self.fishing_UI_pattern.shape[0], 
-                                UI_loc[0] : UI_loc[0] + self.fishing_UI_pattern.shape[1]]
-
-                    fish_loc = self.detect_fish(gray)
-
-                    if fish_loc is not None:
-                        cv2.rectangle(img, UI_loc + fish_loc, UI_loc + fish_loc + np.flip(self.fish_pattern.shape), (0, 255, 0), 3)
-
-                    masked_img = img[UI_loc[1] : UI_loc[1] + self.fishing_UI_pattern.shape[0], 
-                                            UI_loc[0] : UI_loc[0] + self.fishing_UI_pattern.shape[1]]
-                    top, bottom = self.detect_fishing_bar(masked_img, fish_loc)
-                    cv2.rectangle(img, UI_loc + np.array([66, top + 22]), UI_loc + np.array([86, bottom + 22]), (255, 0, 0), 1)
-                    # progress = self.detect_progress(masked_img)
-
-                cv2.imshow("Game Screen Capture", img)
-                # print(f"fps: {1 / (time.time() - last_time)}")
-                # Press "q" to quit
-                if cv2.waitKey(25) & 0xFF == ord("q"):
-                    cv2.destroyAllWindows()
-                    break
 
     def get_game_info(self):
         with mss.mss() as sct:
@@ -164,9 +120,9 @@ class Eye:
 
         fish_y = fish_loc[1]
         if abs(fish_y - bottom) < abs(fish_y - top):
-            bottom = top + get_fishing_level() * 6 + 72
+            bottom = top + get_fishing_bar_length()
         else:
-            top = bottom - (get_fishing_level() * 6 + 72)
+            top = bottom - (get_fishing_bar_length())
 
         return top, bottom
 
