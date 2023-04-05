@@ -21,6 +21,8 @@ class Agent:
         while True:
             game_info = self.eye.get_game_info()
             if game_info is None:
+                last_e = None
+                sum_u = 0
                 self.hand.stop()
                 continue
             fish_y, fishing_bar_y, progress = game_info
